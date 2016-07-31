@@ -28,7 +28,7 @@ from ipywidgets import interactive, interact, fixed
 import h5py as hdf
 import time as time 
 from scipy.misc import imsave 
-from iutils.cv.transforms import get_homography2D, get_affine2D
+from iutils.cv.transforms import get_homography2D
 
 # global variable
 _initTime = 0.0
@@ -1259,7 +1259,7 @@ def grid_of_square_dots(pixx=640, pixy=480, numx=7, numy=7, size=1, ch=3,
 def simulate_depth_imaging(ln, objsurfthick, objarr, fldarr, data, cfgname, 
                            objht, over, pupsam, imgsam, psfx, psfy, pixsize, 
                            xpix, ypix, aberr=2, timeout=180, verbose=True):
-    """simulate imaging with object planes at different depths
+    """simulate imaging with object planes at different depths. 
     
     Parameters
     ----------
@@ -1357,8 +1357,8 @@ def simulate_depth_imaging(ln, objsurfthick, objarr, fldarr, data, cfgname,
 
 
 def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objht,
-                                over, pupsam, imgsam, psfx, psfy, pixsize, 
-                                xpix, ypix, aberr=2, numCrImIpts=11, timeout=180, verbose=False):
+                                over, pupsam, imgsam, psfx, psfy, pixsize, xpix, ypix, 
+                                psfGrid=True, aberr=2, numCrImIpts=11, timeout=180, verbose=False):
     """Creates and returns a stack of simulated images for various focal distances 
     and associated metadata in HDF5 container. Also see Notes. 
     
@@ -1395,8 +1395,11 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
         number of pixel along y
     aberr : integer (0,1, or 2)
         aberration; 0=none, 1=geometric, 2=diffraction 
+    psfGrid : bool, optional 
+        if True (default), the PSF grid (in image space) is simulated and 
+        embedded as a dataset. If False, the PSF grid dataset is empty.
     numCrImIpts : integer, optional (default=11) 
-        number of CR-IMG intersection points along each direction.
+        number of chief-ray-IMG intersection points along each direction.
         Total number of intersection points = numCrImIpts**2
     timeout : integer, optional, default=180
         timeout in ms for each image simulation
@@ -1419,6 +1422,9 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
     in the LDE before calling this function.  
     """  
     TeSTCODE_LOGIC = False   # note that Zemax must be running even for True
+    
+    # insert a surface just before the IMA surface. Changing the thickness of 
+    # this surface will change the image plane distance from the exit pupil.
     imgDeltaSurf = totSurf = ln.zGetNumSurf()
     ln.zInsertSurface(surfNum=totSurf)
     ln.zSetSemiDiameter(surfNum=imgDeltaSurf, value=0)
@@ -1456,7 +1462,7 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
                            }
         set_hdf5_attribs(f, globalAttribDict)
         dataGrp = f.create_group('data')  # data group
-        get_time(startClock=True)  # initiate running clock 
+        get_time(startClock=True)         # initiate running clock 
         for i, delta in enumerate(imgDelta):
             if verbose:
                 print('Time: {}. '.format(get_time()), end='')
@@ -1482,22 +1488,24 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
             # of PSF in the object space), we generate a grid of dots image and 
             # run through the image simulation exactly as we did for the source image
             # to generate the "image side" PSF field 
-            god = grid_of_square_dots(pixx=xpix, pixy=ypix, numx=psfx, numy=psfy, 
-                                      size=1, ch=3, interSpread='max')
-            save_to_IMAdir(god, 'imgsim_god.png')
-            godarr = ['imgsim_god.png']*len(objarr)
+            if psfGrid:
+                god = grid_of_square_dots(pixx=xpix, pixy=ypix, numx=psfx, numy=psfy, 
+                                          size=1, ch=3, interSpread='max')
+                save_to_IMAdir(god, 'imgsim_god.png')
+                godarr = ['imgsim_god.png']*len(objarr)
 
-            if TeSTCODE_LOGIC:
-                print('Code logic test is on.')
-                psfgrid = grid_of_square_dots(pixx=xpix, pixy=ypix, numx=psfx, numy=psfy, 
-                                             size=10, ch=3, interSpread='max')
+                if TeSTCODE_LOGIC:
+                    print('Code logic test is on.')
+                    psfgrid = grid_of_square_dots(pixx=xpix, pixy=ypix, numx=psfx, numy=psfy, 
+                                                 size=10, ch=3, interSpread='max')
+                else:
+                    psfgrid, _ = simulate_depth_imaging(ln, objsurfthick, godarr, fldarr, 'img',
+                                                    'spl.cfg', objht, over, pupsam, imgsam, psfx, 
+                                                    psfy, pixsize, xpix, ypix, aberr, timeout,
+                                                    verbose)
+                dsetpsf = dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
             else:
-                psfgrid, _ = simulate_depth_imaging(ln, objsurfthick, godarr, fldarr, 'img',
-                                                'spl.cfg', objht, over, pupsam, imgsam, psfx, 
-                                                psfy, pixsize, xpix, ypix, aberr, timeout,
-                                                verbose)
-            dsetpsf = dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
-
+                dsetpsf = dataSubGrp.create_dataset('psf', data=(ypix, xpix, 3), dtype=np.uint8) # just a place holder, no actual data is stored.
             # CHIEF-RAY INTERSECT DATA 
             # push lens into the LDE as array tracing occurs in the LDE
             ln.zPushLens(1)
