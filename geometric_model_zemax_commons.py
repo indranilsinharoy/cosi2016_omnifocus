@@ -1746,25 +1746,25 @@ def _get_formatted_dat_string(dats):
     datsstr = ['{:2.3f}'.format(each) for each in dats]
     return ', '.join(datsstr)
 
-def show_image_stack(hdffile, tiltCnt):
-    """plots the `tiltCnt` sequence of the image in the image stack 
+def show_image_stack(hdffile, i):
+    """plots the i-th image in the image stack 
     """
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     with hdf.File(hdffile, 'r') as f:
-        dgrp = f['data/'+'{}'.format(tiltCnt).zfill(3)]
-        dsetImg = f['data/'+'{}'.format(tiltCnt).zfill(3)+'/image']
+        dgrp = f['data/'+'{}'.format(i).zfill(3)]
+        dsetImg = f['data/'+'{}'.format(i).zfill(3)+'/image']
         img = _memmap_ds(hdffile, dsetImg)
         ax.imshow(_downsample_img(img)) #, interpolation='none')
         #if f.attrs['focal_stack_type'] == 'lenstilts'
         print('Mags:', _get_formatted_dat_string(dgrp.attrs['mag']))
         plt.show()
 
-def show_registered_image_stack(hdffile, tiltCnt):
+def show_registered_image_stack(hdffile, i):
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     with hdf.File(hdffile, 'r') as f:
         try:
-            #dgrp = f['registered_data/'+'{}'.format(tiltCnt).zfill(3)]
-            dsetImg = f['/registered_data/'+'{}'.format(tiltCnt).zfill(3)+'/image']
+            #dgrp = f['registered_data/'+'{}'.format(i).zfill(3)]
+            dsetImg = f['/registered_data/'+'{}'.format(i).zfill(3)+'/image']
             img = _memmap_ds(hdffile, dsetImg)
         except:
             ax.text(x=0.35, y=0.5, s='NO REGISTERED DATA', fontsize=17)
@@ -1774,30 +1774,32 @@ def show_registered_image_stack(hdffile, tiltCnt):
             #print('Mags:', _get_formatted_dat_string(dgrp.attrs['mag']))
         plt.show()
 
-def show_psf_stack(hdffile, tiltCnt):
+def show_psf_stack(hdffile, i):
+    """helper function to show the i-th PSF in the stack 
+    """
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     with hdf.File(hdffile, 'r') as f:
-        dgrp = f['/data/'+'{}'.format(tiltCnt).zfill(3)]
-        dsetPsf = f['/data/'+'{}'.format(tiltCnt).zfill(3)+'/psf']
+        dgrp = f['/data/'+'{}'.format(i).zfill(3)]
+        dsetPsf = f['/data/'+'{}'.format(i).zfill(3)+'/psf']
         psfdat = _memmap_ds(hdffile, dsetPsf)
-        if psfdat:
+        if psfdat is not None:
             ax.imshow(_downsample_img(psfdat), interpolation='none')
         else:
             ax.text(x=0.35, y=0.5, s='NO PSF DATA', fontsize=17)
         print('Magnifications:', dgrp.attrs['mag'])
         plt.show()
 
-def show_registered_psf_stack(hdffile, tiltCnt):
+def show_registered_psf_stack(hdffile, i):
     fig, ax = plt.subplots(1, 1, figsize=(14, 10))
     with hdf.File(hdffile, 'r') as f:
         try:
-            #dgrp = f['rectified_data/'+'{}'.format(tiltCnt).zfill(3)]
-            dsetPsf = f['registered_data/'+'{}'.format(tiltCnt).zfill(3)+'/psf']
+            #dgrp = f['rectified_data/'+'{}'.format(i).zfill(3)]
+            dsetPsf = f['registered_data/'+'{}'.format(i).zfill(3)+'/psf']
         except:
             ax.text(x=0.35, y=0.5, s='NO REGISTERED DATA', fontsize=17)
         else:
             psfdat = _memmap_ds(hdffile, dsetPsf)
-            if psfdat:
+            if psfdat is not None:
                 ax.imshow(_downsample_img(psfdat), interpolation='none')
             else:
                 ax.text(x=0.35, y=0.5, s='NO PSF DATA', fontsize=17)
@@ -1828,7 +1830,18 @@ def _get_zero_lens_tilt_sub_group(f):
         if(f['data'][sg].attrs['tilt_x'])==0:
             return f['data'][sg]
 
-def show_cr_img_inter_stack(hdffile, tiltCnt):
+def show_cr_img_inter_frontoparallel_stack(hdffile, i):
+    fig, ax = plt.subplots(1, 1, figsize=(14, 10))
+    with hdf.File(hdffile, 'r') as f:
+        dgrp = f['data/'+'{}'.format(i).zfill(3)]
+        x = f['data/'+'{}'.format(i).zfill(3)+'/cr_img_ipts/x']
+        y = f['data/'+'{}'.format(i).zfill(3)+'/cr_img_ipts/y']
+        ax.scatter(x[...], y[...], s=10, facecolors='none', 
+                       edgecolors='r', alpha=0.8, zorder=12)
+        print('Magnifications:', dgrp.attrs['mag'])
+        plt.show()
+
+def show_cr_img_inter_stack(hdffile, i):
     # determine the axes parameters
     g = 0.04    # guard space on left edge
     p = 0.028   # padding between the axes
@@ -1844,8 +1857,8 @@ def show_cr_img_inter_stack(hdffile, tiltCnt):
         nx = f.attrs['cr_img_ipts_numx']
         ny = f.attrs['cr_img_ipts_numy']
         dgrp0path = _get_zero_lens_tilt_sub_group(f).name
-        dgrp = f['data/' + '{}'.format(tiltCnt).zfill(3)]
-        crImgIptsGrp = f['data/' + '{}'.format(tiltCnt).zfill(3) + '/cr_img_ipts']
+        dgrp = f['data/' + '{}'.format(i).zfill(3)]
+        crImgIptsGrp = f['data/' + '{}'.format(i).zfill(3) + '/cr_img_ipts']
         xlim, ylim = 0, 0
         for distCnt, grp in enumerate(crImgIptsGrp):
             x0 = f[dgrp0path + '/cr_img_ipts/' + '{}'.format(distCnt).zfill(2) + '/x'] 
@@ -1889,7 +1902,7 @@ def show_cr_img_inter_stack(hdffile, tiltCnt):
         #fig.tight_layout() causes eror
         fig.text(0.009, 0.7, r'$\bf{y}\,\it{(mm)}$', fontsize=17, rotation='vertical')
         fig.text(0.5, 0.35, r'$\bf{x}\,\it{(mm)}$', fontsize=17, rotation='horizontal')
-        tiltx = f['data/' + '{}'.format(tiltCnt).zfill(3)].attrs['tilt_x']
+        tiltx = f['data/' + '{}'.format(i).zfill(3)].attrs['tilt_x']
         fig.text(0.45, 0.965, 
                  r'$\alpha_x, \alpha_y = {}^o,{}^o$'.format(tiltx, 0.0), fontsize=19)
         
@@ -1908,7 +1921,7 @@ def show_stack(hdffile, what):
         iSelect = widgets.IntSlider(value=0, min=0, max=stackLen-1, step=1, 
                                     description='ImageNum ({})'.format(stackLen), 
                                     orientation='horizontal')
-        interact(what, hdffile=fixed(hdffile), tiltCnt=iSelect)
+        interact(what, hdffile=fixed(hdffile), i=iSelect)
 
 #%% Data processing and registration
 
