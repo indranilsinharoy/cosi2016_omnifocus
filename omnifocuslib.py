@@ -1,16 +1,22 @@
 # -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
-# Name:          geometric_model_zemax_commons.py
-# Purpose:       common (across multiple notebooks residing in the same directory) 
-#                python functions for geometric modeling with Zemax
-#
-# Author:        Indranil Sinharoy
+# Name:          omnifocuslib.py
+# Purpose:       helper functions for simulation of omnifocus image synthesis
+#                using Zemax and PyZDDE. In particular, the results presented in
+#                the paper: "Omnifocus image synthesis using lens swivel,"
+#                I. Sinharoy, P. Rangarajan, and M. Christensen,  in Imaging and 
+#                Applied Optics 2016, OSA. 
+#                
+# Author:        Indranil Sinharoy, Southern Methodist university, Dallas, TX.
 #
 # Copyright:     (c) Indranil Sinharoy 2015, 2016
 # License:       MIT License
 #-------------------------------------------------------------------------------
-'''utility functions for geometric optics calculations using zemax. wavelength 
-   assumed is 0.55 mu  
+'''utility functions for simulation of omnifocus image synthesis using Zemax and 
+   PyZDDE. Several functions are included for geometric optics computations, 
+   automating the simulation, storing and retrieving image stack data into and 
+   from tagged HDF5 format, etc. 
+   Assumed wavelength for tracing rays in Zemax is 0.55 mu   
 '''
 from __future__ import division, print_function
 import os 
@@ -21,6 +27,7 @@ import collections as co
 import pyzdde.zdde as pyz
 import pyzdde.arraytrace as at 
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from matplotlib.colorbar import make_axes
 from IPython.core import display
 import ipywidgets as widgets
@@ -28,7 +35,6 @@ from ipywidgets import interactive, interact, fixed
 import h5py as hdf
 import time as time 
 from scipy.misc import imsave 
-from iutils.cv.transforms import get_homography2D
 
 # global variable
 _initTime = 0.0
@@ -235,6 +241,77 @@ def show_around(img_data, pixX=20, pixY=None, ctrX=None, ctrY=None,
         if not ax:
             ax.set_aspect('equal')
             plt.show()
+
+def imshow(image, fig=None, axes=None, subplot=None, interpol=None,
+           xlabel=None, ylabel=None, figsize=None, cmap=None):
+    """Rudimentary image display routine, for quick display of images without
+    the spines and ticks 
+    """
+    if (subplot == None):
+        subplot = int(111)
+    if(fig==None):
+        if figsize and isinstance(figsize, tuple) and len(figsize)==2:
+            fig = plt.figure(figsize=figsize)
+        else:
+            fig = plt.figure()
+        axes = fig.add_subplot(subplot)
+    elif(axes==None):
+        axes = fig.add_subplot(subplot)
+    
+    # plot the image
+    if len(image.shape) > 2:
+        imPtHandle = plt.imshow(image, interpolation=interpol)
+    else:
+        cmap = cmap if cmap is not None else cm.gray
+        imPtHandle = plt.imshow(image, cmap=cmap, interpolation=interpol)
+        
+    # get the image height and width to set the axis limits
+    try:
+        pix_height, pix_width = image.shape
+    except:
+        pix_height, pix_width, _ = image.shape
+    # Set the xlim and ylim to constrain the plot
+    axes.set_xlim(0, pix_width-1)
+    axes.set_ylim(pix_height-1, 0)
+    # Set the xlabel and ylable if provided
+    if(xlabel != None):
+        axes.set_xlabel(xlabel)
+    if(ylabel != None):
+        axes.set_ylabel(ylabel)
+    # Make the ticks to empty list
+    axes.xaxis.set_ticks([])
+    axes.yaxis.set_ticks([])
+    return imPtHandle, fig, axes
+
+def get_imlist(filePath, itype='jpeg'):
+    """returns a list of filenames for all images of specified type in a
+    directory
+
+    Parameters
+    ----------
+    filePath : string
+        full path name of the directory to be searched
+    itype : string, optional
+        type of images to be searched, for example -- 'jpeg', 'tiff', 'png',
+        'dng', 'bmp' (without the dot(.))
+
+    Returns
+    -------
+    imageFiles : list of strings
+        list of image filenames with full path.
+    """
+    imlist = []
+    opJoin = os.path.join
+    dirList = os.listdir(filePath)
+    if itype in ['jpeg', 'jpg']:
+        extensions = ['.jpg', '.jpeg', '.jpe',]
+    elif itype in ['tiff', 'tif']:
+        extensions = ['.tiff', '.tif']
+    else:
+        extensions = [''.join(['.', itype.lower()]), ]
+    for ext in extensions:
+        imlist += [opJoin(filePath, f) for f in dirList if f.lower().endswith(ext)]
+    return imlist
 
 #%% Basic geometric-optics functions
 def gaussian_lens_formula(u=None, v=None, f=None, infinity=10e20):
@@ -1481,7 +1558,7 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
                                   'spl.cfg', objht, over, pupsam, imgsam, psfx, psfy, 
                                   pixsize, xpix, ypix, aberr, timeout, verbose)
 
-            dsetimg = dataSubGrp.create_dataset('image', data=img, dtype=np.uint8)
+            dataSubGrp.create_dataset('image', data=img, dtype=np.uint8)
 
             # PSF GRID DATA
             # Instead of asking Zemax to produce the regular PSF grid (i.e. the grid
@@ -1503,9 +1580,9 @@ def focal_stack_fronto_parallel(ln, imgDelta, objsurfthick, objarr, fldarr, objh
                                                     'spl.cfg', objht, over, pupsam, imgsam, psfx, 
                                                     psfy, pixsize, xpix, ypix, aberr, timeout,
                                                     verbose)
-                dsetpsf = dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
+                dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
             else:
-                dsetpsf = dataSubGrp.create_dataset('psf', data=(ypix, xpix, 3), dtype=np.uint8) # just a place holder, no actual data is stored.
+                dataSubGrp.create_dataset('psf', data=(ypix, xpix, 3), dtype=np.uint8) # just a place holder, no actual data is stored.
             # CHIEF-RAY INTERSECT DATA 
             # push lens into the LDE as array tracing occurs in the LDE
             ln.zPushLens(1)
@@ -1655,7 +1732,7 @@ def focal_stack_lens_tilts(ln, cb1, tiltX, objsurfthick, objarr, fldarr, objht, 
                                                   'spl.cfg', objht, over, pupsam, imgsam, 
                                                   psfx, psfy, pixsize, xpix, ypix, aberr, 
                                                   timeout, verbose)
-            dsetimg = dataSubGrp.create_dataset('image', data=img, dtype=np.uint8)
+            dataSubGrp.create_dataset('image', data=img, dtype=np.uint8)
             # PSF GRID DATA
             # Instead of asking Zemax to produce the regular PSF grid (i.e. the grid
             # of PSF in the object space), we generate a grid of dots image and 
@@ -1675,15 +1752,15 @@ def focal_stack_lens_tilts(ln, cb1, tiltX, objsurfthick, objarr, fldarr, objht, 
                                                     'spl.cfg', objht, over, pupsam, imgsam, 
                                                     psfx, psfy, pixsize, xpix, ypix, aberr, 
                                                     timeout, verbose)
-                dsetpsf = dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
+                dataSubGrp.create_dataset('psf', data=psfgrid, dtype=np.uint8)
             else:
-                dsetpsf = dataSubGrp.create_dataset('psf', shape=(ypix, xpix, 3), dtype=np.uint8) # no actual data is stored
+                dataSubGrp.create_dataset('psf', shape=(ypix, xpix, 3), dtype=np.uint8) # no actual data is stored
             # CHIEF-RAY INTERSECT DATA for all object planes
             enpp = ln.zGetPupil().ENPP
             expp = ln.zGetPupil().EXPP
             crImgIPtsGrp = dataSubGrp.create_group('cr_img_ipts')
             for thickCnt, thick in enumerate(objsurfthick):
-                ret = ln.zSetThickness(surfNum=0, value=thick)
+                ln.zSetThickness(surfNum=0, value=thick)
                 # push lens into the LDE as array tracing occurs in the LDE
                 ln.zPushLens(1)
                 x, y, z, err, vig = get_chief_ray_intersects(n=numCrImIpts, real=True)
@@ -1706,12 +1783,18 @@ def focal_stack_lens_tilts(ln, cb1, tiltX, objsurfthick, objarr, fldarr, objht, 
 #%% Data viewing functions
 IMG_DOWN_SAMP_PIX_SKIP = 2
 
-def get_hdf5files_list():
-    """helper function to get the list of HDF5 files in the `data/imgstack`
-    sub-directory
+def get_hdf5files_list(stype=1):
+    """helper function to get the list of HDF5 files in the `data/imgstack` sub-directory
+
+    Parameters
+    ----------
+    stype : integer (0/1)
+        type of simulation. Use `0` for frontoparallel `1` (default) for lens-tilt
+
     """
     imgdir = os.path.join(os.getcwd(), 'data', 'imgstack')
-    return [f for f in os.listdir(imgdir) if f.endswith('.hdf5')]
+    startStr = 'lens_tilt' if stype else 'fronto_para'
+    return [f for f in os.listdir(imgdir) if (f.endswith('.hdf5') and f.startswith(startStr))]
 
 def _downsample_img(img):
     """downsample the image data by a factor IMG_DOWN_SAMP_PIX_SKIP
@@ -1925,6 +2008,106 @@ def show_stack(hdffile, what):
 
 #%% Data processing and registration
 
+def _normalize_2D_pts(p):
+    """Function to normalize 2D homogeneous points
+    
+    This function, which is used for pre-conditioning 2D homogeneous points 
+    before solving for homographies and fundamental matrices, translates and
+    normalizes the set of points so that their centroid is at the origin, and
+    their mean distance from the origin is sqrt(2)
+    
+    Parameters
+    ----------
+    p : ndarray
+        ``p`` is a `3xN` array of for the set of `N` 2D homogeneous points
+        
+    Returns
+    -------
+    newPts : ndarray
+        ``newPts`` has the same shape as ``p`` after normalization. Specifically,
+        `newPts = np.dot(T, p)`
+    T : ndarray
+        the 3x3 similarity transformation matrix     
+    """
+    eps = np.spacing(1)
+    finiteindex = np.where(np.abs(p[-1]) > eps)[0]
+
+    # enforce the scale to be 1 for all finite points    
+    p[:, finiteindex] = p[:, finiteindex]/p[-1, finiteindex]
+    
+    c = np.mean(p[:2, finiteindex], axis=1)      # centroid of finite points
+    pNew = p[:2, finiteindex] - c[:, np.newaxis] # shift origin to centroid
+    dist = np.sqrt(np.sum(pNew**2, axis=0)) 
+    scale = np.sqrt(2)/np.mean(dist)
+    T = np.diag([scale, scale, 1.0])
+    T[:2, 2] = -c*scale
+    return np.dot(T, p), T
+
+def _get_homography2D(fp, tp, method='DLT', normbyh9=True):
+    """Return the homography ``H``, such that ``fp`` is mapped to ``tp`` using 
+    normalized DLT described in Algorithm (4.2) of Hartley and Zisserman. 
+    
+    Parameters
+    ----------
+    fp : ndarray
+        ``fp`` can be a ``2xN`` or ``3xN`` ndarray of "from"-points. If ``fp`` is 
+        ``3xN`` the scaling factors ``w_i`` may or may not be 1. i.e the structure 
+        of ``fp = _np.array([[x0, x1, ...], [y0, y1, ...], [w0, w1, ...]])``. 
+        If ``fp`` is 2xN, then it is assumed that ``w_i = 1`` in homogeneous
+        coordinates. i.e. ``fp = _np.array([[x0, x1, ...], [y0, y1, ...]])``
+    tp : ndarray
+        a ``2xN`` or ``3xN`` ndarray of corresponding "to"-points. If ``tp`` is 
+        ``3xN`` the scaling factors ``w_i'`` may or may not be 1. i.e the structure 
+        of ``tp = _np.array([[x0', x1', ...], [y0', y1', ...], [w0', w1', ...]])``. 
+        If ``tp`` is 2xN, then it is assumed that ``w_i' = 1`` in homogeneous 
+        coordinates is 1. i.e. ``tp = _np.array([[x0', x1', ...], [y0', y1', ...]])``
+    method : string, optional
+        method to compute the 2D homography. Currently only normalized DLT has
+        been implemented
+    normbyh9 : bool, optional
+        if ``True`` (default), the homography matrix ``H`` is normalized by 
+        dividing all elements by ``H[-1,-1]``, so that ``H[-1,-1] = 1``. However, 
+        this normalization will fail if ``H[-1,-1]`` is very small or zero (if
+        the coordinate origin is mapped to a point at infinity by ``H``)
+    
+    Returns
+    -------
+    H : ndarray
+        the 3x3 homography, ``H`` such that ``tp = np.dot(H, fp)``
+    """
+    if fp.shape != tp.shape:
+        raise RuntimeError("The point arrays must have the same shape!")
+    if (fp.shape[0] < 2) or (fp.shape[0] > 3):
+        raise RuntimeError("The length of the input arrays in the first "
+                           "dimension must be 3 or 2")
+    numCorrespondences = fp.shape[1]
+    if fp.shape[0] == 2:
+        fp = np.r_[fp, np.ones((1, numCorrespondences))]
+        tp = np.r_[tp, np.ones((1, numCorrespondences))]
+
+    fp, T = _normalize_2D_pts(fp)
+    tp, Tdash = _normalize_2D_pts(tp)
+
+    # create matrix A of size 2*N by 9
+    A = np.zeros((2*numCorrespondences, 9))
+    wdash = tp[2,:].tolist()
+    for i in range(numCorrespondences):
+        x = fp[:,i]
+        xdash = tp[:2, i]
+        A[2*i:2*(i+1), :] = np.kron(np.c_[np.eye(2)*wdash[i], -xdash], x)
+    
+    # The solution is the unit singular vector corresponding to the smallest
+    # singular value of A
+    U, S, Vh = np.linalg.svd(A)
+    Htilde = Vh[8,:].reshape((3,3))
+    
+    # Denormalization H = T'^-1 H_tilde T
+    H = np.dot(np.linalg.inv(Tdash), np.dot(Htilde, T))    
+
+    if normbyh9:
+        H = H/H[2,2]
+    return H
+
 def _get_homography_from_CR_intersects(f, tiltCnt=0):
     """returns the homographies between all object-planes and the 
     single image plane for the tilted (lens) configuration `tiltCnt`. 
@@ -1957,7 +2140,7 @@ def _get_homography_from_CR_intersects(f, tiltCnt=0):
         y = crImgIptsGrp[grp]['y']
         fp = np.vstack((xRef, yRef))/pixsize
         tp = np.vstack((x, y))/pixsize
-        H = get_homography2D(fp, tp)
+        H = _get_homography2D(fp, tp)
         Hstack.append(H)
     return np.stack(Hstack, axis=2)
 
@@ -1976,7 +2159,7 @@ def _get_registered_data(f, tiltCnt, method='crii'):
         containg the `image`, `psf` and `cr_img_ipts datum` for the particular 
         tilted orientation of the lens. 
     method : string 
-        'crii' supported currently 
+        'crii' using chief-ray intersects in the image plane, supported currently 
 
     Returns
     ------- 
@@ -2028,19 +2211,23 @@ def register_data(hdffile):
     """
     with hdf.File(hdffile, 'r+') as f:
         stackLen = len(f['data'])
-        grp = f.create_group('registered_data')
-        for tiltCnt in range(stackLen):
-            subGrp = grp.create_group('{}'.format(tiltCnt).zfill(3))
-            regImg, regPsf, H = _get_registered_data(f, tiltCnt, method='crii')
-            tiltx = f['data/'+'{}'.format(tiltCnt).zfill(3)].attrs['tilt_x']
-            subGrp.create_dataset('image', data=regImg, dtype=np.uint8)
-            if regPsf:
-                subGrp.create_dataset('psf', data=regPsf, dtype=np.uint8)
-            else:
-                subGrp.create_dataset('psf', shape=regImg.shape, dtype=np.uint8)
-            subGrp.create_dataset('H', data=H, dtype=np.float64)
-            set_hdf5_attribs(subGrp, {'tilt_x': tiltx})
-    print('OK')
+        if not 'registered_data' in f.keys():
+            grp = f.create_group('registered_data')
+            for tiltCnt in range(stackLen):
+                subGrp = grp.create_group('{}'.format(tiltCnt).zfill(3))
+                regImg, regPsf, H = _get_registered_data(f, tiltCnt, method='crii')
+                tiltx = f['data/'+'{}'.format(tiltCnt).zfill(3)].attrs['tilt_x']
+                subGrp.create_dataset('image', data=regImg, dtype=np.uint8)
+                if regPsf:
+                    subGrp.create_dataset('psf', data=regPsf, dtype=np.uint8)
+                else:
+                    subGrp.create_dataset('psf', shape=regImg.shape, dtype=np.uint8)
+                subGrp.create_dataset('H', data=H, dtype=np.float64)
+                set_hdf5_attribs(subGrp, {'tilt_x': tiltx})
+            print('OK! Registered data and embedded into HDF file.')
+        else:
+            print('Registered data already in file. Did not re-register!')
+    
 
 def save_unregistered_images(hdffile, savedir):
     with hdf.File(hdffile, 'r') as f:
