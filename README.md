@@ -23,7 +23,9 @@ and M. Christensen, Imaging and Applied Optics 2016, OSA.
 * fronto_para_focal_stack_2016_07_31_02_10.hdf5 - image stack generated for testing initial code using frontoparallel focal stacking.
 * lens_tilt_focal_stack_2016_03_21_02_19.hdf5 - image stack containing the simulated images obtained under lens rotation, registered images and homographies. This dataset was used in producing the results in the paper. 
 
-The HDF5 files are in the directory `\data\imgstack`. 
+Due to file size restrictions of GitHub the files are not in the part of the repository. However, I have uploaded them to dropbox and provided instructions in the Jupyter notebook on how to download them.
+
+The HDF5 files should in the directory `\data\imgstack`. 
 
 ### Zemax files
 
@@ -45,7 +47,7 @@ I expect to cleanup the notebook soon.
 
 ## License
 
-The code is under the `MIT License <http://opensource.org/licenses/MIT>`__.
+The code is under the [MIT License](http://opensource.org/licenses/MIT).
 
 Note that I don't guarantee the accuracy or performance of the code in the repository. I 
 have tried to ensure that the code is accurate to the best of my ability. Also, I haven't
