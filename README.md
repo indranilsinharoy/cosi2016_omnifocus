@@ -23,7 +23,7 @@ and M. Christensen, Imaging and Applied Optics 2016, OSA.
 * fronto_para_focal_stack_2016_07_31_02_10.hdf5 - image stack generated for testing initial code using frontoparallel focal stacking.
 * lens_tilt_focal_stack_2016_03_21_02_19.hdf5 - image stack containing the simulated images obtained under lens rotation, registered images and homographies. This dataset was used in producing the results in the paper. 
 
-Due to file size restrictions of GitHub the files are not in the part of the repository. However, I have uploaded them to dropbox and provided instructions in the Jupyter notebook on how to download them.
+Due to file size restrictions of GitHub, the above files are not part of the repository. However, I have uploaded them to dropbox and provided instructions in the Jupyter notebook on how to download them.
 
 The HDF5 files should in the directory `\data\imgstack`. 
 
