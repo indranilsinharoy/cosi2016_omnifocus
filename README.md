@@ -35,14 +35,14 @@ I have included two Zemax lens files that used in the computational notebook. Es
 
 
 
+## 
 
 
 For a discourse on the topic, please visit https://indranilsinharoy.com/projects/omnifocus/
 
 
-**PLEASE NOTE:** The computational notebooks has not been "cleaned up" in its current form. 
-It contains some of the experimentations and explorations. 
-I expect to cleanup the notebook soon.
+**PLEASE NOTE:** The code in this repository is not meant to be *production-ready* code. It is essentially *research code* (whose main purpose is experimentation and proof of concept). Also, there are few things that still needs to be done---which I have clearly marked using **<font color='magenta'>To do!</font>** and provided comments.   
+
 
 
 ## License

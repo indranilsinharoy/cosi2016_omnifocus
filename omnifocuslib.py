@@ -2050,25 +2050,25 @@ def _get_homography2D(fp, tp, method='DLT', normbyh9=True):
     Parameters
     ----------
     fp : ndarray
-        ``fp`` can be a ``2xN`` or ``3xN`` ndarray of "from"-points. If ``fp`` is 
-        ``3xN`` the scaling factors ``w_i`` may or may not be 1. i.e the structure 
-        of ``fp = _np.array([[x0, x1, ...], [y0, y1, ...], [w0, w1, ...]])``. 
-        If ``fp`` is 2xN, then it is assumed that ``w_i = 1`` in homogeneous
-        coordinates. i.e. ``fp = _np.array([[x0, x1, ...], [y0, y1, ...]])``
+        `fp` can be a `2xN` or `3xN` ndarray of "from"-points. If `fp` is `3xN` 
+        the scaling factors `w_i` may or may not be 1. i.e the structure of 
+        `fp = np.array([[x0, x1, ...], [y0, y1, ...], [w0, w1, ...]])`. 
+        If `fp` is 2xN, then it is assumed that `w_i = 1` in homogeneous
+        coordinates. i.e. `fp = np.array([[x0, x1, ...], [y0, y1, ...]])`
     tp : ndarray
-        a ``2xN`` or ``3xN`` ndarray of corresponding "to"-points. If ``tp`` is 
-        ``3xN`` the scaling factors ``w_i'`` may or may not be 1. i.e the structure 
-        of ``tp = _np.array([[x0', x1', ...], [y0', y1', ...], [w0', w1', ...]])``. 
-        If ``tp`` is 2xN, then it is assumed that ``w_i' = 1`` in homogeneous 
-        coordinates is 1. i.e. ``tp = _np.array([[x0', x1', ...], [y0', y1', ...]])``
+        a `2xN` or `3xN` ndarray of corresponding "to"-points. If `tp` is `3xN` 
+        the scaling factors `w_i'` may or may not be 1. i.e the structure of 
+        `tp = _np.array([[x0', x1', ...], [y0', y1', ...], [w0', w1', ...]])`. 
+        If `tp` is 2xN, then it is assumed that `w_i' = 1` in homogeneous 
+        coordinates is 1. i.e. `tp = np.array([[x0', x1', ...], [y0', y1', ...]])`
     method : string, optional
         method to compute the 2D homography. Currently only normalized DLT has
         been implemented
     normbyh9 : bool, optional
-        if ``True`` (default), the homography matrix ``H`` is normalized by 
-        dividing all elements by ``H[-1,-1]``, so that ``H[-1,-1] = 1``. However, 
-        this normalization will fail if ``H[-1,-1]`` is very small or zero (if
-        the coordinate origin is mapped to a point at infinity by ``H``)
+        if `True` (default), the homography matrix `H` is normalized by 
+        dividing all elements by `H[-1,-1]`, so that `H[-1,-1] = 1`. However, 
+        this normalization will fail if `H[-1,-1]` is very small or zero (if
+        the coordinate origin is mapped to a point at infinity by `H`)
     
     Returns
     -------
@@ -2159,7 +2159,8 @@ def _get_registered_data(f, tiltCnt, method='crii'):
         containg the `image`, `psf` and `cr_img_ipts datum` for the particular 
         tilted orientation of the lens. 
     method : string 
-        'crii' using chief-ray intersects in the image plane, supported currently 
+        'crii' using chief-ray intersects in the image plane, supported currently
+        'ana' using the analytic expression (NOT YET IMPLEMENTED) 
 
     Returns
     ------- 
@@ -2170,8 +2171,10 @@ def _get_registered_data(f, tiltCnt, method='crii'):
     H : ndarray 
         hompgraphy 
     """
+    # TO DO:: Important! add logic to compute the homography using the analytic expression.
+
     Hcr = _get_homography_from_CR_intersects(f, tiltCnt)
-    # TO DO ;; else other logic 
+    
     # test that the 3 homographies computed between the three object planes
     # and the image plane are equal for all configurations of the lens tilt
     assert (np.allclose(Hcr[:,:,0], Hcr[:,:,1]) and 
@@ -2193,11 +2196,12 @@ def _get_registered_data(f, tiltCnt, method='crii'):
 
 
 def register_data(hdffile):
-    """register the images and psf grid in the file `hdffile`
+    """register the images and psf grid in the file `hdffile`.
 
     The function creates a group called `registered_data` under the root 
     group. The registered image, psf grid data, and corresponding homographies
-    are stored under subgroups with names as three digit numbers 
+    are stored under subgroups with names as three digit numbers. The acutal
+    registration and homograpy computation is done in `_get_registered_data()` 
 
     Parameters
     ---------- 
@@ -2228,8 +2232,8 @@ def register_data(hdffile):
         else:
             print('Registered data already in file. Did not re-register!')
     
-
 def save_unregistered_images(hdffile, savedir):
+    """helper function"""
     with hdf.File(hdffile, 'r') as f:
         stackLen = len(f['data'])
         print('No. of images:', stackLen)
@@ -2242,6 +2246,7 @@ def save_unregistered_images(hdffile, savedir):
     print('OK')
 
 def save_registered_images(hdffile, savedir):
+    """helper function"""
     with hdf.File(hdffile, 'r') as f:
         stackLen = len(f['registered_data'])
         print('No. of images:', stackLen)
