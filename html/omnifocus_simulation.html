@@ -11702,16 +11702,36 @@ Date modified: April 09, 2015
     div.output_text{text-align:left;color:#000000;font-family:monospace; line-height:1.231em;font-size:110%}  
     /*div.text_cell_render{font-size:110%;outline:none;resize:none;width:inherit;
                          border-style:none;padding:.5em .5em .5em .4em;color:#000000;}*/
-    div.text_cell_render{font-size:131%;outline:none;resize:none;width:inherit;line-height:1.5em;
-                         border-style:none;padding:.5em .5em .5em .4em;color:#000000; font-family:Palatino,Palatino Linotype,Palatino LT STD,Book Antiqua,Georgia,serif}
+    div.text_cell_render{font-size:131%;outline:none;resize:none;width:inherit;line-height:1.6em;
+                         border-style:none;padding:.5em .5em .5em .4em;color:#111111; font-family:Georgia, times, serif;}
     div.output_text{text-align:left;color:#000;line-height:1.21429em;font-size:112%;}
     .CodeMirror{line-height:1.231em;height:auto;background:none;}
     .CodeMirror pre{padding:0;border:0;border-radius:0;-webkit-border-radius:0;-moz-border-radius:0;border-radius:0;font-size:112%;}
 
     /* formatting of headers in text cells */
-    .rendered_html h1{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:160%;margin:1.08em 0 0.5em 0;font-weight:bold;line-height:1; color:#FF335A;} 
+    .rendered_html h1{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:160%;margin:1.08em 0 0.5em 0;font-weight:bold;line-height:1; color:#0076FF;text-align:center;}  
+    h1::first-letter {
+    font-size:105%;
+    color: #fff;
+    background-color:#FF335A;
+    padding:0em .16em 0em .16em;
+    }
+    /*
+    h1::after {
+    color: #17B2B6;
+    content: '.......................................';
+    display: block;
+    font-size: 16px;
+    letter-spacing: 2px;
+    line-height: 0.0;
+    margin-top: 10px;
+    margin-left:-3.2em;
+    text-align: center;
+     }
+     */
+     
     .rendered_html h2{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:145%;margin:1.2em 0 0 0;font-weight:bold;line-height:1; color:#0C62EB;} 
-    .rendered_html h3{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:129%;margin:1.2em 0 0 0;font-weight:bold;line-height:1; color:#1387FF;}
+    .rendered_html h3{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:125%;margin:1.2em 0 0 0;font-weight:bold;line-height:1; color:#1387FF;}
     .rendered_html h4{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:116.0%;margin:2.00em 0 0 0;font-weight:bold;line-height:1; color:#15BCFF;}
     .rendered_html h5{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:108.0%;margin:2.00em 0 0 0;font-weight:bold;line-height:1; font-style:normal; color: #37FFFF;} 
     .rendered_html h6{font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:99.0%;margin:2.00em 0 0 0;font-weight:bold;line-height:1; font-style:normal; color: #15FFBC;}
@@ -11846,7 +11866,10 @@ div#notebook {
 <h2 id="Preface">Preface<a class="anchor-link" href="#Preface">&#182;</a></h2><p>This notebook documents the Zemax-based simulations that verify our theory for synthesizing omnifocus image as proposed in the paper "<em>Omnifocus image synthesis using lens swivel</em>," I. Sinharoy, P. Rangarajan, 
 and M. Christensen, Imaging and Applied Optics 2016, OSA.</p>
 <p>The simulations are carried out using Zemax. In addition the PyZDDE toolbox is used to automate the processing, setting the appropriate parameters in Zemax, and running the image simulation multiple times.</p>
-<p><em>Repository @ Github: <a href="https://github.com/indranilsinharoy/cosi2016_omnifocus">cosi2016_omnifocus</a></em></p>
+<ul>
+<li><em>Repository @ Github: <a href="https://github.com/indranilsinharoy/cosi2016_omnifocus">(code, dataset, paper, poster)</a></em></li>
+<li><em>Discourse @ blog: <a href="https://indranilsinharoy.com/projects/omnifocus/">(3 min elevator pitch video, informal exposition)</a></em></li>
+</ul>
 <p><strong>Note</strong></p>
 <p>The following Scientific Python Libraries are required:</p>
 <ol>
@@ -27434,18 +27457,16 @@ shift @ pixels =  625.497064202
 </div>
 
 </div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
 <div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span> 
-</pre></div>
+<div class="text_cell_render border-box-sizing rendered_html">
+<p><strong><font color='magenta'>To do!</font></strong></p>
+<p>Note that the inter-image homography matrix computed above, using the derived expression, matches very well with that obtained from the chief-ray intersects, except for the sign of the translation component(s) -- $H(2,2)$. This sign discrepancy is a consequence of the inconsistency of coordinate convention for image representation between our theory (+y is <em>up</em> or <em>decreasing row number</em>) and that of OpenCV's (+y is <em>down</em> or <em>increasing row number</em>). In order to avoid confusion, the code needs to be modified accordingly.</p>
 
 </div>
 </div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
