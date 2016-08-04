@@ -9,7 +9,7 @@ and M. Christensen, Imaging and Applied Optics 2016, OSA.
 
 ### Computational notebooks (Jupyter)
 
-* [Zemax based simulation of omnifocus image synthesis using lens swivel](http://htmlpreview.github.io/?https://github.com/indranilsinharoy/cosi2016_omnifocus/blob/master/html/omnifocus_simulation.html) - documents the simulation process, plots imtermediate results, and other essential information about the simulation setup.
+* [Zemax based simulation of omnifocus image synthesis using lens swivel](https://dl.dropboxusercontent.com/u/20104715/github/cosi2016_omnifocus/omnifocus_simulation.html) - documents the simulation process, plots imtermediate results, and other essential information about the simulation setup.
 
 ### Local modules
 
