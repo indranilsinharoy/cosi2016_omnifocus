@@ -5,6 +5,10 @@ the paper "Omnifocus image synthesis using lens swivel," I. Sinharoy, P. Rangara
 and M. Christensen, Imaging and Applied Optics 2016, OSA. 
 
 
+[![DOI](https://zenodo.org/badge/3811/indranilsinharoy/cosi2016_omnifocus.svg)](https://zenodo.org/badge/latestdoi/3811/indranilsinharoy/cosi2016_omnifocus)
+
+
+
 ## Contents of the repository
 
 ### Computational notebooks (Jupyter)
